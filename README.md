@@ -1,7 +1,7 @@
 # Gestión de un incidente de ciberseguridad
 **Phishing con malware y posible fuga de datos personales en una empresa de 100 empleados**
 
-- **Autor/a:** Pablo López Sánchez
+- **Autor:** Pablo López Sánchez
 - **Módulo:** Ciberseguridad
 - **Rol:** Responsable del equipo de ciberseguridad
 - **Fecha:** 17 de noviembre de 2026
