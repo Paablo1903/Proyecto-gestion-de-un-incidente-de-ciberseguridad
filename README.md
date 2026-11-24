@@ -2,7 +2,7 @@
 **Phishing con malware y posible fuga de datos personales en una empresa de 100 empleados**
 
 - **Autor/a:** Pablo López Sánchez
-- **Módulo / Curso:** Ciberseguridad
+- **Módulo:** Ciberseguridad
 - **Rol:** Responsable del equipo de ciberseguridad
 - **Fecha:** 17 de noviembre de 2026
 
