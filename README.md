@@ -1,8 +1,8 @@
 # Gestión de un incidente de ciberseguridad
 **Phishing con malware y posible fuga de datos personales en una empresa de 100 empleados**
 
-- **Autor:** Pablo López Sánchez
-- **Módulo:** Ciberseguridad
+- **Autor/a:** _Tu nombre y apellidos_
+- **Módulo / Curso:** Ciberseguridad
 - **Rol:** Responsable del equipo de ciberseguridad
 - **Fecha:** 17 de noviembre de 2026
 
@@ -237,16 +237,32 @@ Dos partes acuerdan una clave simétrica por un canal inseguro sin enviarla. Var
 ---
 
 ## Práctica con OpenSSL
-Salidas de una ejecución real con OpenSSL 3.0.13 y `sha256sum`. Todo sobre archivos de prueba inofensivos. **No se sube ninguna clave privada.**
+Capturas de mi ejecución en Kali Linux (OpenSSL y `sha256sum`) y en Windows (PowerShell). Todo sobre archivos de prueba inofensivos. **No se sube ninguna clave privada.**
 
 ### P1. Hash y efecto avalancha
-```console
-$ sha256sum documento.txt
-5d98c5af72335a371850411f9015eee3d05719dd7de83c25d7f6aef89be8ebf1  documento.txt
-$ sha256sum documento_modificado.txt   # solo se ha añadido una "X"
-f75a3adc31878242bebc15fd3c003e6cc90ccd99c101d4b152dba85a85fd02ca  documento_modificado.txt
+En Kali: creo `documento.txt`, calculo su SHA-256, hago una copia, la modifico con `nano` y vuelvo a calcular el hash.
+```bash
+touch documento.txt
+sha256sum documento.txt
+cp documento.txt documento_modificado.txt
+nano documento_modificado.txt
+sha256sum documento_modificado.txt
 ```
-Un solo carácter produce un hash completamente distinto.
+![P1 en Kali: sha256sum del original y del modificado](capturas/p1-kali-sha256sum.png)
+
+Los dos hashes son totalmente distintos: cualquier modificación de un archivo, por pequeña que sea, cambia el resultado (efecto avalancha). Por eso el hash sirve para comprobar la integridad de una evidencia.
+
+Lo mismo en Windows con `Get-FileHash`:
+```powershell
+Out-File documento.txt
+Copy-Item documento.txt documento_modificado.txt
+Add-Content documento_modificado.txt "Pablo" -NoNewline
+Get-FileHash .\documento.txt -Algorithm SHA256
+Get-FileHash .\documento_modificado.txt -Algorithm SHA256
+```
+![P1 en Windows: Get-FileHash del original y del modificado](capturas/p1-windows-get-filehash.png)
+
+Otra vez los dos hashes son completamente distintos. El hash de `documento.txt` en Windows no coincide con el de Kali porque no son el mismo archivo: el de Kali estaba vacío y `Out-File` guarda el archivo con su propia codificación de texto.
 
 ### P2. Par de claves RSA y firma digital
 ```bash
@@ -256,12 +272,20 @@ openssl dgst -sha256 -sign clave_privada.pem -out documento.firma documento.txt
 openssl dgst -sha256 -verify clave_publica.pem -signature documento.firma documento.txt            # Verified OK
 openssl dgst -sha256 -verify clave_publica.pem -signature documento.firma documento_modificado.txt # Verification failure
 ```
+![P2 en Kali: firma RSA y verificación](capturas/p2-kali-firma-rsa.png)
+
+Generé un par de claves RSA de 2048 bits, firmé `documento.txt` con la clave privada y verifiqué la firma con la pública. Con el original el resultado es `Verified OK` y con el modificado `Verification failure` (las líneas `bad signature` son el error esperado). La firma digital garantiza integridad y autenticidad: si cambia un solo carácter, deja de validar.
 
 ### P3. Cifrado simétrico AES-256
 ```bash
-openssl enc -aes-256-cbc -pbkdf2 -salt -in documento.txt -out documento.enc -pass pass:ClaveDePrueba123
-openssl enc -d -aes-256-cbc -pbkdf2 -in documento.enc -pass pass:ClaveDePrueba123
+openssl enc -aes-256-cbc -pbkdf2 -salt -in documento.txt -out documento.enc -pass pass:Hola_1234
+openssl enc -d -aes-256-cbc -pbkdf2 -in documento.enc -pass pass:Hola_1234
 ```
+![P3 en Kali: cifrado y descifrado AES-256](capturas/p3-kali-aes256.png)
+
+<!-- TODO: repetir esta captura con texto dentro de documento.txt y añadir `xxd documento.enc | head -3` para que se vea el cifrado y el texto recuperado -->
+Cifré `documento.txt` con AES-256-CBC (clave derivada con PBKDF2 y sal) y lo descifré con la misma clave. En el cifrado simétrico se usa la misma clave para cifrar y descifrar, y sin ella el contenido no se puede leer. Aplicado al caso, cifrar discos y copias del servidor de ficheros haría inútiles los datos robados.
+
 (En un entorno real no se escribe la clave en la línea de comandos.)
 
 ### P4. Certificado X.509 autofirmado
@@ -279,6 +303,8 @@ sha256 Fingerprint=E3:FD:30:81:1D:86:E5:E1:9D:3B:29:E6:16:9A:84:04:23:B1:69:93:9
 ```
 Emisor y sujeto coinciden: autofirmado, sin cadena de confianza.
 
+_Salida de ejemplo; sustituir por captura propia._
+
 ### P5. Diffie-Hellman (X25519)
 ```console
 $ openssl pkeyutl -derive -inkey a.pem -peerkey b.pub | sha256sum
@@ -288,9 +314,10 @@ e6036d7f2c46fad52d2574e0022822b85f5495d26ccbe64791116edc6294ce57  -
 ```
 Ambas partes llegan al mismo secreto sin transmitirlo.
 
-### Pendiente de captura propia (`/capturas`)
-- [ ] P1 con `Get-FileHash` en PowerShell además de `sha256sum`.
-- [ ] P2 a P5 en tu entorno.
+_Salida de ejemplo; sustituir por captura propia._
+
+### Pendiente de captura propia
+- [ ] P4 y P5 en tu entorno.
 - [ ] Certificado de una web real en el navegador y su cadena de confianza.
 
 ---
@@ -402,7 +429,43 @@ Complementos: `Get-MpThreatDetection`, `Get-WinEvent` (4625, 5140/5145), `Get-Ne
 > **Nota:** el nombre del grupo depende del idioma. Alternativa universal: `Get-LocalGroupMember -SID S-1-5-32-544`.
 
 ### Resultados
-_Pega aquí las capturas (carpeta `/capturas`) y comenta lo que observas._
+Auditoría realizada en PowerShell, como administrador, sobre un servidor de laboratorio con Windows Server 2022 Standard Evaluation en VirtualBox (25/11/2026).
+
+#### 1. `Get-ComputerInfo`
+![Get-ComputerInfo](capturas/audit-01-get-computerinfo.png)
+
+El equipo es un Windows Server 2022 Standard Evaluation (build 20348, versión 21H2), instalado el 20/10/2026 y ejecutándose en una máquina virtual VirtualBox. Estos datos identifican el equipo para la ficha del incidente (2.6).
+
+#### 2 y 3. `Get-LocalUser` y `Get-LocalGroupMember -Group administradores`
+![Usuarios locales y administradores](capturas/audit-02-03-usuarios-y-administradores.png)
+
+Hay cuatro cuentas locales y solo `Administrador` está habilitada; `DefaultAccount`, `Invitado` y `WDAGUtilityAccount` están deshabilitadas. El grupo Administradores solo contiene a `Administrador`, así que no hay cuentas nuevas ni administradores añadidos sin autorización. Aun así, trabajar siempre con la cuenta de administrador incumple el mínimo privilegio (norma 1.2): lo correcto sería usar una cuenta estándar y elevar privilegios solo cuando haga falta.
+
+#### 4. `Get-Service | where status -eq running`
+![Servicios en ejecución](capturas/audit-04-get-service.png)
+
+En la parte capturada aparecen servicios propios de Windows Server (cliente DHCP, cliente DNS, registro de eventos, motor de filtrado…) y no hay nombres desconocidos ni que imiten a servicios legítimos. El servicio `LanmanServer` (Servidor) está activo, es decir, el equipo ofrece recursos compartidos por SMB, lo que es relevante por el movimiento lateral del caso.
+
+#### 5. `Get-NetFirewallProfile`
+![Perfiles del firewall](capturas/audit-05-get-netfirewallprofile.png)
+
+<!-- TODO: añadir captura del perfil Public (Get-NetFirewallProfile -Name Public) -->
+Los perfiles Domain y Private tienen `Enabled = True`: el firewall está activo y no hay indicio de que un malware lo haya desactivado.
+
+#### 6. `Get-MpComputerStatus`
+![Estado de Microsoft Defender](capturas/audit-06-get-mpcomputerstatus.png)
+
+El servicio antimalware y el antivirus están habilitados (`AMServiceEnabled` y `AntivirusEnabled` en True) y las firmas están al día (actualizadas el 25/11/2026, `AntivirusSignatureAge = 0`). Sin embargo, `RealTimeProtectionEnabled`, `OnAccessProtectionEnabled`, `BehaviorMonitorEnabled` e `IoavProtectionEnabled` están en False, y `IsTamperProtected` también. Es un hallazgo importante: sin protección en tiempo real, un archivo malicioso como el adjunto del caso no se bloquearía al ejecutarse y solo se detectaría en un análisis posterior. Además, `FullScanAge = 4294967295` indica que nunca se ha hecho un análisis completo (solo uno rápido el 25/11/2026). Recomendación: activar la protección en tiempo real y la protección contra manipulación, y programar análisis completos.
+
+#### 7. `Get-HotFix`
+![Parches instalados](capturas/audit-07-get-hotfix.png)
+
+Solo hay tres actualizaciones (KB5008882, KB5011497 de seguridad y KB5010523), todas instaladas el 03/03/2022. El equipo lleva más de cuatro años sin parches: es una vía de entrada probable para vulnerabilidades conocidas e incumple la norma de aplicar los parches críticos en un máximo de 7 días.
+
+#### 8. `Get-Package`
+![Software instalado](capturas/audit-08-get-package.png)
+
+El software instalado es Google Chrome, Microsoft Edge, Npcap y una actualización de inteligencia de seguridad (msu). Npcap es la librería de captura que usan herramientas como Wireshark, coherente con el análisis de tráfico del apartado 3. No hay programas desconocidos.
 
 ---
 
