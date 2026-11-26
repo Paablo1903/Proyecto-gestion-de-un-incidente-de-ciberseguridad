@@ -1,8 +1,8 @@
 # Gestión de un incidente de ciberseguridad
 **Phishing con malware y posible fuga de datos personales en una empresa de 100 empleados**
 
-- **Autor/a:** _Tu nombre y apellidos_
-- **Módulo / Curso:** Ciberseguridad
+- **Autor:** _Pablo López Sánchez_
+- **Módulo:** Ciberseguridad
 - **Rol:** Responsable del equipo de ciberseguridad
 - **Fecha:** 17 de noviembre de 2026
 
@@ -226,14 +226,6 @@ Hash del documento cifrado con la clave privada; se verifica con la pública. Re
 X.509: liga identidad y clave pública, firmado por una CA (sujeto, emisor, validez, clave pública, usos).
 **En el caso:** autentican servicios internos y VPN; si se comprometen, se revocan.
 
-### 6. PKI
-CA raíz (offline), CA intermedias, RA, repositorios y revocación (CRL/OCSP). Cadena de confianza.
-**En el caso:** emitir certificados a empleados y equipos y revocar los de equipos comprometidos.
-
-### 7. Diffie-Hellman
-Dos partes acuerdan una clave simétrica por un canal inseguro sin enviarla. Variante moderna: ECDHE (X25519). Con claves efímeras: Perfect Forward Secrecy.
-**En el caso:** base de TLS y VPN; el tráfico capturado no se podría descifrar a posteriori.
-
 ---
 
 ## Práctica con OpenSSL
@@ -287,40 +279,6 @@ openssl enc -d -aes-256-cbc -pbkdf2 -in documento.enc -pass pass:Hola_1234
 Cifré `documento.txt` con AES-256-CBC (clave derivada con PBKDF2 y sal) y lo descifré con la misma clave. En el cifrado simétrico se usa la misma clave para cifrar y descifrar, y sin ella el contenido no se puede leer. Aplicado al caso, cifrar discos y copias del servidor de ficheros haría inútiles los datos robados.
 
 (En un entorno real no se escribe la clave en la línea de comandos.)
-
-### P4. Certificado X.509 autofirmado
-```bash
-openssl req -x509 -newkey rsa:2048 -nodes -keyout k.pem -out certificado.pem -days 365 \
-  -subj "/C=ES/O=Empresa Demo/CN=servidor.demo.local"
-openssl x509 -in certificado.pem -noout -subject -issuer -dates -fingerprint -sha256
-```
-```text
-subject=C = ES, O = Empresa Demo, CN = servidor.demo.local
-issuer=C = ES, O = Empresa Demo, CN = servidor.demo.local
-notBefore=Nov 17 11:36:05 2026 GMT
-notAfter=Nov 17 11:36:05 2027 GMT
-sha256 Fingerprint=E3:FD:30:81:1D:86:E5:E1:9D:3B:29:E6:16:9A:84:04:23:B1:69:93:9D:E8:D3:78:5F:65:82:D1:BF:AB:5A:17
-```
-Emisor y sujeto coinciden: autofirmado, sin cadena de confianza.
-
-_Salida de ejemplo; sustituir por captura propia._
-
-### P5. Diffie-Hellman (X25519)
-```console
-$ openssl pkeyutl -derive -inkey a.pem -peerkey b.pub | sha256sum
-e6036d7f2c46fad52d2574e0022822b85f5495d26ccbe64791116edc6294ce57  -
-$ openssl pkeyutl -derive -inkey b.pem -peerkey a.pub | sha256sum
-e6036d7f2c46fad52d2574e0022822b85f5495d26ccbe64791116edc6294ce57  -
-```
-Ambas partes llegan al mismo secreto sin transmitirlo.
-
-_Salida de ejemplo; sustituir por captura propia._
-
-### Pendiente de captura propia
-- [ ] P4 y P5 en tu entorno.
-- [ ] Certificado de una web real en el navegador y su cadena de confianza.
-
----
 
 ## 2.1 y 2.2 Clasificación del incidente, gravedad y sistemas afectados
 
@@ -449,7 +407,6 @@ En la parte capturada aparecen servicios propios de Windows Server (cliente DHCP
 #### 5. `Get-NetFirewallProfile`
 ![Perfiles del firewall](capturas/capturas/audit-05-get-netfirewallprofile.png)
 
-<!-- TODO: añadir captura del perfil Public (Get-NetFirewallProfile -Name Public) -->
 Los perfiles Domain y Private tienen `Enabled = True`: el firewall está activo y no hay indicio de que un malware lo haya desactivado.
 
 #### 6. `Get-MpComputerStatus`
