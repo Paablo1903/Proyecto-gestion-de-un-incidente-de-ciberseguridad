@@ -1,0 +1,2 @@
+786f93111ff894c6a90dda77dafd867c2648e62cadde9f291c5d32a4ad8d2561  adjunto-simulado.bin
+ce4b46815767c28844f49dd991cf838f325b8c708b54a56e1aa296142ebf1f5c  correo-phishing-simulado.eml
